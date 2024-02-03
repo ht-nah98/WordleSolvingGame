@@ -1,6 +1,7 @@
-taxes
-wordy
-clone
-python
-clear
-bling
+1st: Create new env: python3 -m venv env1
+2nd: Go to env1 have created
+2nd: Let download all packages: pip install -r requirements.txt
+3rd:
+    Run: python wordleSovling.py
+    Enter secrete key you want computer guess.
+    Let computer work and see result.
