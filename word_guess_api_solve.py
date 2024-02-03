@@ -1,8 +1,7 @@
-import requests
-import random
-import string
+import httpx
 import enum
 import collections
+import random
 from termcolor import colored
 
 class Tip(enum.Enum):
@@ -13,11 +12,11 @@ class Tip(enum.Enum):
 class WordleGame:
     def __init__(self, word_length=5):
         self.WORD_LENGTH = word_length
-        self.ALLOWABLE_CHARACTERS = set(string.ascii_lowercase)
+        self.ALLOWABLE_CHARACTERS = set("abcdefghijklmnopqrstuvwxyz")
         self.WORDS = set()
 
     def download_word_list(self, url):
-        response = requests.get(url)
+        response = httpx.get(url)
         if response.status_code == 200:
             self.WORDS = {
                 word.lower()
@@ -28,71 +27,82 @@ class WordleGame:
             print(f"Failed to download the word list from {url}.")
             self.WORDS = set()
 
-    def display_feedback(self, guess, word):
-        for i in range(self.WORD_LENGTH):
-            if guess[i] == word[i]:
-                print(colored(guess[i], 'green'), end="")
-            elif guess[i] in word:
-                print(colored(guess[i], 'yellow'), end="")
+    async def fetch_word_guess(self, word, guess):
+        url = f"https://wordle.votee.dev:8000/word/{word}"
+        params = {
+            "guess": guess
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url, params=params)
+
+            if response.status_code == 200:
+                data = response.json()
+                tip_feedback = [Tip.CORRECT if item['result'].upper() == 'CORRECT' else
+                                Tip.PRESENT if item['result'].upper() == 'PRESENT' else
+                                Tip.ABSENT for item in data]
+
+                print("Result:", tip_feedback)
+                return tip_feedback
             else:
-                print(colored(guess[i], 'grey'), end="")
+                print(f"Failed to fetch data. Status code: {response.status_code}")
+                return None
+
+
+    def display_feedback(self, guess, tip_feedback):
+        for i, (tip, char) in enumerate(zip(tip_feedback, guess)):
+            if tip == Tip.CORRECT:
+                print(colored(char, 'green'), end="")
+            elif tip == Tip.PRESENT:
+                print(colored(char, 'yellow'), end="")
+            else:
+                print(colored(char, 'grey'), end="")
         print()
 
-    def get_secret_word(self):
-        print("Write your secret word:")
-        secret = input(">>> ")
-        return secret.lower()
+    def generate_first_guess(self):
+        guess = ''.join(random.sample(self.ALLOWABLE_CHARACTERS, self.WORD_LENGTH))
+        return guess
 
     def score(self, secret, guess):
         pool = collections.Counter(s for s, g in zip(secret, guess) if s != g)
+        correct_positions = set()
+
         score = []
-        for secret_char, guess_char in zip(secret, guess):
-            if secret_char == guess_char:
+        for i, (secret_char, guess_char) in enumerate(zip(secret, guess)):
+            if secret_char == guess_char and i not in correct_positions:
                 score.append(Tip.CORRECT)
+                correct_positions.add(i)
             elif guess_char in secret and pool[guess_char] > 0:
                 score.append(Tip.PRESENT)
                 pool[guess_char] -= 1
             else:
                 score.append(Tip.ABSENT)
+
         return score
 
-    # Method to filter words based on the guess and score
     def filter_words(self, words, guess, score):
-        # Initialize an empty list to store the filtered words
         new_words = []
-        # Iterate through each word in the current word pool
         for word in words:
-            # only word have not correct position will appear on pool
             pool = collections.Counter(c for c, sc in zip(word, score) if sc != Tip.CORRECT)
 
             for char_w, char_g, sc in zip(word, guess, score):
-                # Check conditions based on the score type
                 if sc == Tip.CORRECT and char_w != char_g:
-                    # Break if the character is correct but in the wrong position 
-                    break
-                elif char_w == char_g and sc != Tip.CORRECT:
-                    # Break if the character is present but in the wrong position
                     break
                 elif sc == Tip.PRESENT:
-                    # Break if the character is present in the wrong position and the pool is empty
-                    if not pool[char_g]:
+                    if char_g != char_w and not pool[char_g]:
                         break
                     pool[char_g] -= 1
                 elif sc == Tip.ABSENT and pool[char_g]:
-                    # Break if the character is absent but present in the pool
                     break
             else:
-                # If the loop completes without breaking, the word passes all conditions
                 new_words.append(word)
 
-        # Return the list of filtered words
         return new_words
 
-
-    def play_game(self):
+    async def play_game(self):
         self.download_word_list("https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt")
 
-        secret = self.get_secret_word()
+        secret = "hello"
         words = [word for word in self.WORDS if len(word) == len(secret)]
         attempts = 1
 
@@ -104,24 +114,22 @@ class WordleGame:
 
             guess = random.choice(words)
             print(f"Hmmm, I'll guess {guess!r}...")
-            self.display_feedback(guess, secret)
-            sc = self.score(secret, guess)
-            print(f"\tMy guess scored {sc}...")
+            sc = await self.fetch_word_guess(secret, guess)
+            self.display_feedback(guess, sc)
             words = self.filter_words(words, guess, sc)
             attempts += 1
             print()
 
             if len(words) == 1:
-                break  # Exit the loop if only one word remains
+                print(words)
+                break
 
         if not words or all(score == Tip.CORRECT for score in self.score(secret, words[0])):
             print(f"Congratulations! I guessed the word {secret!r} in {attempts} attempts.")
         else:
-            print(f"Sorry, I couldn't guess the word. The correct word is {words[0]!r}.")
-
-
-
+            print("Sorry, I couldn't guess the word. The correct word is still unknown.")
 
 if __name__ == "__main__":
+    import asyncio
     game = WordleGame()
-    game.play_game()
+    asyncio.run(game.play_game())

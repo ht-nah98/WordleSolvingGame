@@ -3,3 +3,4 @@ string
 enum
 collections
 termcolor
+httpx
