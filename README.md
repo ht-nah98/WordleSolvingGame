@@ -45,3 +45,10 @@ Welcome to the Wordle Solving Game, where algorithms help the computer find hidd
    ```bash
    git clone [repository_url]
    cd WordleSolvingGame
+
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+
+3. Run the game:
+   python word_daily_api_solve.py
