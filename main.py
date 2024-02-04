@@ -43,18 +43,34 @@ class WordleGame:
         secret = input(">>> ")
         return secret.lower()
 
+    # def score(self, secret, guess):
+    #     # All characters that are not correct go into the usable pool.
+    #     pool = collections.Counter(s for s, g in zip(secret, guess) if s != g)
+    #     # Create a first tentative score by comparing char by char.
+    #     score = []
+    #     for secret_char, guess_char in zip(secret, guess):
+    #         if secret_char == guess_char:
+    #             score.append(Tip.CORRECT)
+    #         elif guess_char in secret and pool[guess_char] > 0:
+    #             score.append(Tip.PRESENT)
+    #             pool[guess_char] -= 1
+    #         else:
+    #             score.append(Tip.ABSENT)
+
+    #     return score
+
+    # dont remove the duplicate letter if this letter is correct 
     def score(self, secret, guess):
-        pool = collections.Counter(s for s, g in zip(secret, guess) if s != g)
         score = []
         for secret_char, guess_char in zip(secret, guess):
             if secret_char == guess_char:
                 score.append(Tip.CORRECT)
-            elif guess_char in secret and pool[guess_char] > 0:
+            elif guess_char in secret:
                 score.append(Tip.PRESENT)
-                pool[guess_char] -= 1
             else:
                 score.append(Tip.ABSENT)
-        return score
+
+        return score    
 
     # Method to filter words based on the guess and score
     def filter_words(self, words, guess, score):
@@ -62,7 +78,7 @@ class WordleGame:
         new_words = []
         # Iterate through each word in the current word pool
         for word in words:
-            # only word have not correct position will appear on pool
+            # only word have not CORRECT will appear on pool
             pool = collections.Counter(c for c, sc in zip(word, score) if sc != Tip.CORRECT)
 
             for char_w, char_g, sc in zip(word, guess, score):
@@ -94,6 +110,7 @@ class WordleGame:
 
         secret = self.get_secret_word()
         words = [word for word in self.WORDS if len(word) == len(secret)]
+        print(len(words))
         attempts = 1
 
         while len(words) > 1 and attempts < 7:
@@ -110,7 +127,7 @@ class WordleGame:
             words = self.filter_words(words, guess, sc)
             attempts += 1
             print()
-
+            print("print words: ", words)
             if len(words) == 1:
                 break  # Exit the loop if only one word remains
 

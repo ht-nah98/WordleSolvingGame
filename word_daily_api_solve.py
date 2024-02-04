@@ -59,10 +59,6 @@ class WordleGame:
                 print(colored(char, 'grey'), end="")
         print()
 
-    def generate_first_guess(self):
-        guess = ''.join(random.sample(self.ALLOWABLE_CHARACTERS, self.WORD_LENGTH))
-        return guess
-
     def score(self, secret, guess):
         pool = collections.Counter(s for s, g in zip(secret, guess) if s != g)
         correct_positions = set()
@@ -78,7 +74,7 @@ class WordleGame:
             else:
                 score.append(Tip.ABSENT)
 
-        return score
+        return score     
 
     def filter_words(self, words, guess, score):
         new_words = []
@@ -102,8 +98,7 @@ class WordleGame:
     async def play_game(self):
         self.download_word_list("https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt")
 
-        secret = self.generate_first_guess()
-        words = [word for word in self.WORDS if len(word) == len(secret)]
+        words = [word for word in self.WORDS if len(word) == self.WORD_LENGTH]
         attempts = 1
 
         while len(words) > 1 and attempts < 7:
@@ -119,14 +114,14 @@ class WordleGame:
             words = self.filter_words(words, guess, sc)
             attempts += 1
             print()
-
-            if len(words) == 1:
-                break
-
-        if not words or all(score == Tip.CORRECT for score in self.score(secret, words[0])):
-            print(f"Congratulations! I guessed the word {secret!r} in {attempts} attempts.")
+            print("print words:", words)
+        final_guess = words[-1] if words else guess
+        final_result = await self.fetch_random_word(final_guess)
+        self.display_feedback(final_guess, final_result)
+        if final_result == [Tip.CORRECT] * self.WORD_LENGTH:
+            print(f"Congratulations! I guessed the word {final_guess!r} in {attempts} attempts.")
         else:
-            print("Sorry, I couldn't guess the word. The correct word is still unknown.")
+            print("Can find the secret key")
 
 if __name__ == "__main__":
     import asyncio
