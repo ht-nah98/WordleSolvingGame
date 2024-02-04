@@ -4,7 +4,7 @@ async def fetch_word_guess(word, guess):
     # Specify the URL and parameters
     url = f"https://wordle.votee.dev:8000/word/{word}"
     params = {
-        "guess": guess  # Replace with your actual guess
+        "guess": guess  
     }
 
     async with httpx.AsyncClient() as client:

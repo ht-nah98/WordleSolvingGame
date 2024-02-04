@@ -4,7 +4,7 @@ async def fetch_daily_word():
     url = "https://wordle.votee.dev:8000/daily"
     params = {
         "guess": "hoomo",  # Replace with your actual guess
-        "size": 5  # You can adjust the size parameter if needed
+        "size": 5  
     }
 
     async with httpx.AsyncClient() as client:

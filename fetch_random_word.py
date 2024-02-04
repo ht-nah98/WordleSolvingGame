@@ -6,7 +6,7 @@ async def fetch_random_word():
     params = {
         "guess": "helloa",  # Replace with your actual guess
         "size": 6,  # You can adjust the size parameter if needed
-        "seed": 123  # You can provide a specific seed if needed
+        "seed": 123  
     }
 
     async with httpx.AsyncClient() as client:
