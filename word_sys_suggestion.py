@@ -141,8 +141,6 @@ def play_game(secret_word):
             print(f"\nComputer guessed the secret word: {secret_word}")
             break
 
-# Provide the secret word for the computer to guess
 secret_word = input("Enter the secret word for the computer to guess: ").lower()
 
-# Start the game
 play_game(secret_word)
