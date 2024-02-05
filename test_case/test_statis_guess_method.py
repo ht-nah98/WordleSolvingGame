@@ -11,9 +11,9 @@ ALLOWED_ATTEMPTS = 10
 WORD_LENGTH = 5
 
 WORDS = {
-  word.lower()
-  for word in Path(DICT).read_text().splitlines()
-  if len(word) == WORD_LENGTH and set(word) < ALLOWABLE_CHARACTERS
+    word.lower()
+    for word in Path(DICT).read_text().splitlines()
+    if len(word) == WORD_LENGTH and set(word) < ALLOWABLE_CHARACTERS
 }
 
 LETTER_COUNTER = Counter(chain.from_iterable(WORDS))
@@ -41,15 +41,15 @@ def display_word_table(word_commonalities):
     for (word, freq) in word_commonalities:
         print(f"{word:<10} | {freq:<5.2}")
 
-def generate_response(secret_word, computer_guess):
+def generate_colored_response(secret_word, computer_guess):
     response = ""
     for sw, cw in zip(secret_word, computer_guess):
         if sw == cw:
-            response += "G"
+            response += f"\033[92m{cw}\033[0m"  # G (Green)
         elif cw in secret_word:
-            response += "Y"
+            response += f"\033[93m{cw}\033[0m"  # Y (Yellow)
         else:
-            response += "?"
+            response += f"\033[90m{cw}\033[0m"  # ? (Grey)
     return response
 
 def match_word_vector(word, word_vector):
@@ -75,7 +75,7 @@ def computer_guess_secret_word(possible_words, word_vector):
 def play_game(secret_word):
     possible_words = WORDS.copy()
     word_vector = [set(string.ascii_lowercase) for _ in range(WORD_LENGTH)]
-    
+
     for attempt in range(1, ALLOWED_ATTEMPTS + 1):
         print(f"\nAttempt {attempt} with {len(possible_words)} possible words")
         display_word_table(sort_by_word_commonality(possible_words)[:15])
@@ -88,18 +88,18 @@ def play_game(secret_word):
 
         print(f"Computer's guess: {computer_guess}")
 
-        response = generate_response(secret_word, computer_guess)
-        print(f"Automatic response: {response}")
+        colored_response = generate_colored_response(secret_word, computer_guess)
+        print(f"Colored response: {colored_response}")
 
-        for idx, letter in enumerate(response):
-            if letter == "G":
+        for idx, letter in enumerate(colored_response):
+            if letter == "\033[92mG\033[0m":
                 word_vector[idx] = {computer_guess[idx]}
-            elif letter == "Y":
+            elif letter == "\033[93mY\033[0m":
                 try:
                     word_vector[idx].remove(computer_guess[idx])
                 except KeyError:
                     pass
-            elif letter == "?":
+            elif letter == "\033[90m?\033[0m":
                 for vector in word_vector:
                     try:
                         vector.remove(computer_guess[idx])
