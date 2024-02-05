@@ -3,7 +3,7 @@ async def fetch_daily_word():
     # Specify the URL and parameters
     url = "https://wordle.votee.dev:8000/daily"
     params = {
-        "guess": "hoomo",  # Replace with your actual guess
+        "guess": "creek",  # Replace with your actual guess
         "size": 5  
     }
 
@@ -12,8 +12,6 @@ async def fetch_daily_word():
 
         if response.status_code == 200:
             data = response.json()
-            print("the guess word: hoomo")
-            print("the correct word: goose")
             print("Received data:", data)
         else:
             print(f"Failed to fetch data. Status code: {response.status_code}")
