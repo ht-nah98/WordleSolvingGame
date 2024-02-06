@@ -86,25 +86,47 @@ class WordleSolver:
                 return None
 
     async def computer_guess_from_api(self, word_vector, possible_words, letter_frequency):
+        """
+        Method to perform computer guessing using an API.
+
+        Args:
+            word_vector (list): The current word vector representing the possible characters for each position.
+            possible_words (set): Set of possible words based on the current state of the game.
+            letter_frequency (dict): Frequency of letters in the English language.
+
+        Returns:
+            None
+        """
         for attempt in range(1, self.ALLOWED_ATTEMPTS + 1):
             print(f"\nAttempt {attempt} with {len(possible_words)} possible words")
+            
+            # Display the top 15 words based on word commonality
             display_words = self.sort_by_word_commonality(possible_words, letter_frequency)[:15]
             self.display_word_table(display_words)
 
+            # The computer selects the first word in the possible words set as its guess
             computer_guess = list(possible_words)[0]
             print(f"Computer's guess: {computer_guess}")
 
+            # Send the computer's guess to the API and receive the response
             response = await self.fetch_daily_word(computer_guess)
             print(f"Response from API: {response}")
 
+            # Update the word vector and possible words based on the API response
             for idx, letter in enumerate(response):
+                # if letter is G, remain in the word_vector only for this letter 
+                # example from [['a,b,c,d,e,f']...] - > [['a'],....]
                 if letter == "G":
                     word_vector[idx] = {computer_guess[idx]}
+                
+                # if letter Y, remove this letter at this index in vector_word and keep other letter remain
                 elif letter == "Y":
                     try:
                         word_vector[idx].remove(computer_guess[idx])
                     except KeyError:
                         pass
+                
+                # if letter is ?, remove this letter in all vector_word
                 elif letter == "?":
                     for vector in word_vector:
                         try:
@@ -112,8 +134,10 @@ class WordleSolver:
                         except KeyError:
                             pass
 
+            # Narrow down the possible words based on the API response
             possible_words = self.match(word_vector, possible_words)
 
+            # Check if the computer guessed the secret word correctly
             if "G" * self.WORD_LENGTH == response:
                 print(f"\nComputer guessed the secret word: {computer_guess}")
                 break
@@ -147,7 +171,6 @@ class WordleSolver:
         await self.computer_guess_from_api(word_vector, possible_words, letter_frequency)
 
 if __name__ == "__main__":
-    # Fetch words from GitHub
     github_words = fetch_words_from_github()
 
     if github_words is not None:
